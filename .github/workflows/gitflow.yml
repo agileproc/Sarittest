@@ -1,0 +1,12 @@
+steps:
+  - uses: actions/checkout@v4 # Checkout your repository's code
+  - name: Install git flow
+    run: |
+      # For ubuntu-latest runner
+      sudo apt-get update
+      sudo apt-get install -y git-flow
+
+  - name: Run git flow init
+    run: |
+      # Run in non-interactive mode with default values
+      git flow init -d 
