@@ -1,0 +1,74 @@
+name: Initialize Git Flow
+
+on:
+  create
+
+jobs:
+  init-gitflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Initialize Git Flow Branches
+        run: |
+          # Create develop branch
+          if ! git rev-parse --verify develop > /dev/null 2>&1; then
+            git checkout -b develop main
+            git push origin develop
+            echo "✓ Created develop branch"
+          fi
+          
+          # Create release branch
+          if ! git rev-parse --verify release > /dev/null 2>&1; then
+            git checkout -b release develop
+            git push origin release
+            echo "✓ Created release branch"
+          fi
+          
+          # Create hotfix branch
+          if ! git rev-parse --verify hotfix > /dev/null 2>&1; then
+            git checkout -b hotfix main
+            git push origin hotfix
+            echo "✓ Created hotfix branch"
+          fi
+
+      - name: Protect Main Branch
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            await github.rest.repos.updateBranchProtection({
+              owner,
+              repo,
+              branch: 'main',
+              required_pull_request_reviews: { required_approving_review_count: 1 },
+              enforce_admins: true,
+              allow_force_pushes: false,
+              allow_deletions: false
+            });
+
+      - name: Protect Develop Branch
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            await github.rest.repos.updateBranchProtection({
+              owner,
+              repo,
+              branch: 'develop',
+              required_pull_request_reviews: { required_approving_review_count: 1 },
+              enforce_admins: true,
+              allow_force_pushes: false,
+              allow_deletions: false
+            });
