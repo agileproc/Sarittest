@@ -1,0 +1,52 @@
+name: Initialize Git Flow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  initialize-gitflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git Config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create develop branch
+        run: |
+          if ! git rev-parse --verify develop > /dev/null 2>&1; then
+            git checkout -b develop main
+            git push origin develop
+          fi
+
+      - name: Set branch protections
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            const branches = ['main', 'develop'];
+            for (const branch of branches) {
+              try {
+                await github.rest.repos.updateBranchProtection({
+                  owner,
+                  repo,
+                  branch,
+                  required_status_checks: { strict: true, contexts: [] },
+                  enforce_admins: true,
+                  required_pull_request_reviews: { 
+                    required_approving_review_count: 1 
+                  },
+                  dismiss_stale_reviews: true
+                });
+              } catch (e) {
+                console.log(`Protection for ${branch} already exists or failed`);
+              }
+            }
